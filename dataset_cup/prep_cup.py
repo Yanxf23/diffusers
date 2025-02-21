@@ -15,34 +15,37 @@ def get_image_with_smallest_number(directory):
     return profile_index, os.path.join(directory, png_files[0]) if png_files else None
 
 def prep_cup():
-    conditions = ["Wet", "Dirty", "Warm"]
-    users = [f"{i:03}" for i in range(1, 101)]  
+    # conditions = ["warm", "warm", "Warm"]
+    conditions = ["warm"]
+    users = [f"{i:03}" for i in range(1, 81)]  
     wavelengths = ["850", "890"]
     hands = ["L", "R"]
     i = 0
     src_root = r"C:\Users\mobil\Desktop\24fall\palmvein2024\palmvein\data\data_v3\ROI\See3_ROI\10"
-    dst_root = r"C:\Users\mobil\Desktop\25spring\stylePalm\diffusers\dataset"
+    dst_root = r"C:\Users\mobil\Desktop\25spring\stylePalm\diffusers\dataset_cup"
     for user in users:
         for condition in conditions:
             for wavelength in wavelengths:
                 for hand in hands:
                     index, original_src = get_image_with_smallest_number(rf"{src_root}\{user}\{wavelength}\{hand}\Clean")
-                    original_dst = rf"{dst_root}\original\image_{i}.jpg"
+                    os.makedirs(rf"{dst_root}\original_warm", exist_ok=True)
+                    original_dst = rf"{dst_root}\original_warm\image_{i}.jpg"
                     index, edited_src = get_image_with_smallest_number(rf"{src_root}\{user}\{wavelength}\{hand}\{condition}")
-                    edited_dst = rf"{dst_root}\edited\image_{i}.jpg"
-                    prompt = f"make this palm {condition}\n"
+                    os.makedirs(rf"{dst_root}\edited_warm", exist_ok=True)
+                    edited_dst = rf"{dst_root}\edited_warm\image_{i}.jpg"
+                    prompt = f"make it {condition}\n"
                     if original_src is None or edited_src is None:
                         continue
                     i += 1
                     shutil.copy(original_src, original_dst)
                     shutil.copy(edited_src, edited_dst)
-                    with open(rf"{dst_root}\prompts.txt", "a") as f:
+                    with open(rf"{dst_root}\prompts_warm.txt", "a") as f:
                         f.write(prompt)
 
 def validation():
-    ORIGINAL_IMAGES = Path("original")
-    EDITED_IMAGES = Path("edited")
-    PROMPTS = Path("prompts.txt")
+    ORIGINAL_IMAGES = Path("original_warm")
+    EDITED_IMAGES = Path("edited_warm")
+    PROMPTS = Path("prompts_warm.txt")
 
     # check if directories exists
     if not ORIGINAL_IMAGES.exists():
@@ -105,15 +108,17 @@ def load_samples(original_images_path: list[Path], edited_images_path: list[Path
         
     return datasets.Dataset.from_dict(dataset_json, features)
 
-ORIGINAL_IMAGES = Path("original")
-EDITED_IMAGES = Path("edited")
-PROMPTS = Path("prompts_none.txt")
+prep_cup()
+
+ORIGINAL_IMAGES = Path("original_warm")
+EDITED_IMAGES = Path("edited_warm")
+PROMPTS = Path("prompts_warm.txt")
 with open(PROMPTS, "r") as fp:
     prompts = fp.readlines()
 ip2p_dataset = load_samples(ORIGINAL_IMAGES.iterdir(), EDITED_IMAGES.iterdir(), prompts)
 
 ip2p_dataset.push_to_hub(
-    "eve25yan/cup_openMV_prompts_none",
+    "eve25yan/cup_openMV_warm",
     split = 'train',
     private = True
 )
